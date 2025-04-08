@@ -11,6 +11,10 @@
     "build": "rollup -c && tsc --emitDeclarationOnly",
     "prepack": "npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adangs/dify-chat.git"
+  },
   "keywords": ["dify", "ChatClient"],
   "author": "Adang",
   "license": "ISC",
