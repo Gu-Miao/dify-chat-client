@@ -1,0 +1,8 @@
+node_modules/
+src/
+docs/
+public/
+index.html
+*.local
+.vscode
+.idea
