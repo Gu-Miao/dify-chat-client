@@ -11,7 +11,8 @@ export class ChatClient {
   apiKey?: string | undefined;
   baseURL?: string | null | undefined;
   constructor(options?: ClientOptions) {
-    Object.assign(this, options)
+    this.apiKey = options?.apiKey
+    this.baseURL = options?.baseURL || 'https://api.dify.ai/v1'
   }
 
   async sendChatMessage(body: any, {
