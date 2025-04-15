@@ -1,6 +1,6 @@
 {
   "name": "dify-chat",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "dify-chat",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -186,6 +186,9 @@ const ContentType = {
   json: 'application/json',
   stream: 'text/event-stream',
   form: 'application/x-www-form-urlencoded; charset=UTF-8',
+  mpeg: 'audio/mpeg',
+  wav: 'audio/wav',
+  pcm: 'audio/pcm',
   download: 'application/octet-stream', // for download
 }
 
@@ -439,9 +442,13 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
           }
 
           // return data
-          const data = options.headers.get('Content-type') === ContentType.download ? res.blob() : res.json()
-
-          resolve(needAllResponseContent ? resClone : data)
+          // console.log('[res] ', res)
+          if ([ContentType.mpeg, ContentType.pcm, ContentType.wav].includes(res.headers.get('Content-type'))) {
+            resolve(needAllResponseContent ? resClone : res.blob())
+          } else {
+            const data = options.headers.get('Content-type') === ContentType.download ? res.blob() : res.json()
+            resolve(needAllResponseContent ? resClone : data)
+          }
         })
         .catch((err) => {
           console.error({ type: 'error', message: err })
