@@ -57,8 +57,10 @@ const client = new ChatClient({
 
 client.tts({
   text: 'hello hello' 
-}).then(res => {
-  console.log(res)
+}).then((blob) => {
+  const audioUrl = URL.createObjectURL(blob);
+  const audio = new Audio(audioUrl);
+  audio.play();
 })
 ```
 
