@@ -58,27 +58,67 @@ export class ChatClient {
 
   // 获取会话列表
   fetchConversations = async () => {
-    return get(this.baseURL + '/conversations', { params: { limit: 100, first_id: '' } })
+    return get(this.baseURL + '/conversations', {
+      params: { limit: 100, first_id: '' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
   }
 
   // 获取会话历史消息
   fetchChatList = async (conversationId: string) => {
-    return get(this.baseURL + '/messages', { params: { conversation_id: conversationId, limit: 20, last_id: '' } })
+    return get(this.baseURL + '/messages', {
+      params: { conversation_id: conversationId, limit: 20, last_id: '' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
   }
 
   // 获取应用参数
   fetchAppParams = async () => {
-    return get(this.baseURL + '/parameters')
+    return get(this.baseURL + '/parameters', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
   }
 
   // 会话重命名
   generationConversationName = async (id: string) => {
-    return post(`${this.baseURL}/conversations/${id}/name`, { body: { auto_generate: true } })
+    return post(`${this.baseURL}/conversations/${id}/name`, {
+      body: { auto_generate: true },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
   }
 
   // 文字转语音
   tts = async (body: {message_id?: string, text?: string, user?: string}) => {
-    return post(`${this.baseURL}/text-to-audio`, { body })
+    return post(`${this.baseURL}/text-to-audio`, {
+      body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
+  }
+
+  // 语音转文字
+  asr = async (body: {file?: any, user?: string}) => {
+    return post(`${this.baseURL}/audio-to-text`, {
+      body,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
   }
 
 }
