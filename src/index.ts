@@ -76,4 +76,9 @@ export class ChatClient {
     return post(`${this.baseURL}/conversations/${id}/name`, { body: { auto_generate: true } })
   }
 
+  // 文字转语音
+  tts = async (body: {message_id?: string, text?: string, user?: string}) => {
+    return post(`${this.baseURL}/text-to-audio`, { body })
+  }
+
 }
