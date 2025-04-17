@@ -443,11 +443,10 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
 
           // return data
           // console.log('[res] ', res)
-          if ([ContentType.mpeg, ContentType.pcm, ContentType.wav].includes(res.headers.get('Content-type'))) {
+          if ([ContentType.mpeg, ContentType.pcm, ContentType.wav].includes(res.headers?.get('Content-type'))) {
             resolve(needAllResponseContent ? resClone : res.blob())
           } else {
-            const data = options.headers.get('Content-type') === ContentType.download ? res.blob() : res.json()
-            resolve(needAllResponseContent ? resClone : data)
+            resolve(needAllResponseContent ? resClone :  res.json())
           }
         })
         .catch((err) => {
