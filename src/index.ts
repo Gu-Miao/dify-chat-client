@@ -43,17 +43,33 @@ export class ChatClient {
     onWorkflowFinished: IOnWorkflowFinished
   }) {
     return ssePost(this.baseURL + '/chat-messages', {
-      body: {
-        ...body,
+      body: Object.assign({
         inputs: {},
         files: [],
-        response_mode: 'streaming',
-      },
+      }, (body || {}), {
+        response_mode: 'streaming'
+      }),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`
       },
     }, { onData, onCompleted, onThought, onFile, onError, getAbortController, onMessageEnd, onMessageReplace, onNodeStarted, onWorkflowStarted, onWorkflowFinished, onNodeFinished })
+  }
+
+  // 阻塞模式
+  async sendChatMessageSync(body: any) {
+    return post(this.baseURL + '/chat-messages', {
+      body: Object.assign({
+        inputs: {},
+        files: [],
+      }, (body || {}), {
+        response_mode: 'blocking'
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    })
   }
 
   // 获取会话列表
