@@ -46,23 +46,5 @@ client.sendChatMessage({
 })
 ```
 
-### API
-```js
-import { ChatClient } from 'dify-chat'
-
-const client = new ChatClient({
-  baseURL: '/dify/v1',
-  apiKey: 'app-xxxxx'
-})
-
-client.tts({
-  text: 'hello hello' 
-}).then((blob) => {
-  const audioUrl = URL.createObjectURL(blob);
-  const audio = new Audio(audioUrl);
-  audio.play();
-})
-```
-
 ### References
 > https://github.com/langgenius/webapp-conversation

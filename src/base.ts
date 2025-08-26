@@ -1,62 +1,25 @@
+import type { AnnotationReply, MessageEnd, MessageReplace, ThoughtItem } from './types/type'
+import type { VisionFile } from './types/app'
+import { API_PREFIX, BASE_URL, API_KEY } from './index'
+
 const TIME_OUT = 100000
-export enum TransferMethod {
-  all = 'all',
-  local_file = 'local_file',
-  remote_url = 'remote_url',
+
+const ContentType = {
+  json: 'application/json',
+  stream: 'text/event-stream',
+  form: 'application/x-www-form-urlencoded; charset=UTF-8',
+  download: 'application/octet-stream', // for download
 }
 
-export type CitationItem = {
-  content: string
-  data_source_type: string
-  dataset_name: string
-  dataset_id: string
-  document_id: string
-  document_name: string
-  hit_count: number
-  index_node_hash: string
-  segment_id: string
-  segment_position: number
-  score: number
-  word_count: number
-}
-
-export type MessageEnd = {
-  id: string
-  metadata: {
-    retriever_resources?: CitationItem[]
-    annotation_reply: {
-      id: string
-      account: {
-        id: string
-        name: string
-      }
-    }
-  }
-}
-
-export type AnnotationReply = {
-  id: string
-  task_id: string
-  answer: string
-  conversation_id: string
-  annotation_id: string
-  annotation_author_name: string
-}
-
-export type MessageReplace = {
-  id: string
-  task_id: string
-  answer: string
-  conversation_id: string
-}
-
-export type VisionFile = {
-  id?: string
-  type: string
-  transfer_method: TransferMethod
-  url: string
-  upload_file_id: string
-  belongs_to?: string
+const baseOptions = {
+  method: 'GET',
+  mode: 'cors',
+  credentials: 'include', // always send cookies、HTTP Basic authentication.
+  headers: new Headers({
+    'Content-Type': ContentType.json,
+    'Authorization': `Bearer ${API_KEY}`
+  }),
+  redirect: 'follow',
 }
 
 export type WorkflowStartedResponse = {
@@ -138,18 +101,6 @@ export type IOnDataMoreInfo = {
   errorCode?: string
 }
 
-export type ThoughtItem = {
-  id: string
-  tool: string // plugin or dataset. May has multi.
-  thought: string
-  tool_input: string
-  message_id: string
-  observation: string
-  position: number
-  files?: string[]
-  message_files?: VisionFile[]
-}
-
 export type IOnData = (message: string, isFirstMessage: boolean, moreInfo: IOnDataMoreInfo) => void
 export type IOnThought = (though: ThoughtItem) => void
 export type IOnFile = (file: VisionFile) => void
@@ -175,31 +126,11 @@ type IOtherOptions = {
   onMessageReplace?: IOnMessageReplace
   onError?: IOnError
   onCompleted?: IOnCompleted // for stream
-  getAbortController?: (abortController: any) => void
+  getAbortController?: (abortController: AbortController) => void
   onWorkflowStarted?: IOnWorkflowStarted
   onWorkflowFinished?: IOnWorkflowFinished
   onNodeStarted?: IOnNodeStarted
   onNodeFinished?: IOnNodeFinished
-}
-
-const ContentType = {
-  json: 'application/json',
-  stream: 'text/event-stream',
-  form: 'application/x-www-form-urlencoded; charset=UTF-8',
-  mpeg: 'audio/mpeg',
-  wav: 'audio/wav',
-  pcm: 'audio/pcm',
-  download: 'application/octet-stream', // for download
-}
-
-const baseOptions = {
-  method: 'GET',
-  mode: 'cors',
-  credentials: 'include', // always send cookies、HTTP Basic authentication.
-  headers: new Headers({
-    'Content-Type': ContentType.json,
-  }),
-  redirect: 'follow',
 }
 
 function unicodeToChar(text: string) {
@@ -208,62 +139,6 @@ function unicodeToChar(text: string) {
   })
 }
 
-export const ssePost = (
-  url: string,
-  fetchOptions: any,
-  {
-    onData,
-    onCompleted,
-    onThought,
-    onFile,
-    onMessageEnd,
-    onMessageReplace,
-    onWorkflowStarted,
-    onWorkflowFinished,
-    onNodeStarted,
-    onNodeFinished,
-    onError,
-  }: IOtherOptions,
-) => {
-  const options = Object.assign({}, baseOptions, {
-    method: 'POST',
-  }, fetchOptions)
-
-  const { body } = options
-  if (body)
-    options.body = JSON.stringify(body)
-
-  fetch(url, options)
-    .then((res: any) => {
-      if (!/^(2|3)\d{2}$/.test(res.status)) {
-        // eslint-disable-next-line no-new
-        new Promise(() => {
-          res.json().then((data: any) => {
-            console.error({ type: 'error', message: data.message || 'Server Error' })
-            // Toast.notify({ type: 'error', message: data.message || 'Server Error' })
-          })
-        })
-        onError?.('Server Error')
-        return
-      }
-      return handleStream(res, (str: string, isFirstMessage: boolean, moreInfo: IOnDataMoreInfo) => {
-        if (moreInfo.errorMessage) {
-          console.error({ type: 'error', message: moreInfo.errorMessage })
-          // Toast.notify({ type: 'error', message: moreInfo.errorMessage })
-          return
-        }
-        onData?.(str, isFirstMessage, moreInfo)
-      }, () => {
-        onCompleted?.()
-      }, onThought, onMessageEnd, onMessageReplace, onFile, onWorkflowStarted, onWorkflowFinished, onNodeStarted, onNodeFinished)
-    }).catch((e) => {
-    console.error({ type: 'error', message: e })
-    // Toast.notify({ type: 'error', message: e })
-    onError?.(e)
-  })
-}
-
-// 流式数据处理
 const handleStream = (
   response: Response,
   onData: IOnData,
@@ -373,11 +248,12 @@ const handleStream = (
   read()
 }
 
-// 基础请求
 const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: IOtherOptions) => {
   const options = Object.assign({}, baseOptions, fetchOptions)
 
-  let urlWithPrefix = url
+  const urlPrefix = API_PREFIX
+
+  let urlWithPrefix = `${BASE_URL}${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
 
   const { method, params, body } = options
   // handle query
@@ -400,14 +276,13 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
 
   // Handle timeout
   return Promise.race([
-    // @ts-ignore
-    new Promise((resolve, reject): any => {
+    new Promise((resolve, reject) => {
       setTimeout(() => {
         reject(new Error('request timeout'))
       }, TIME_OUT)
     }),
-    new Promise((resolve, reject): any => {
-      fetch(urlWithPrefix, options)
+    new Promise((resolve, reject) => {
+      globalThis.fetch(urlWithPrefix, options)
         .then((res: any) => {
           const resClone = res.clone()
           // Error handler
@@ -442,12 +317,9 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
           }
 
           // return data
-          // console.log('[res] ', res)
-          if ([ContentType.mpeg, ContentType.pcm, ContentType.wav].includes(res.headers?.get('Content-type'))) {
-            resolve(needAllResponseContent ? resClone : res.blob())
-          } else {
-            resolve(needAllResponseContent ? resClone :  res.json())
-          }
+          const data = options.headers.get('Content-type') === ContentType.download ? res.blob() : res.json()
+
+          resolve(needAllResponseContent ? resClone : data)
         })
         .catch((err) => {
           console.error({ type: 'error', message: err })
@@ -455,6 +327,93 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
         })
     }),
   ])
+}
+
+export const upload = (fetchOptions: any): Promise<any> => {
+  const urlPrefix = API_PREFIX
+  const urlWithPrefix = `${BASE_URL}${urlPrefix}/file-upload`
+  const defaultOptions = {
+    method: 'POST',
+    url: `${urlWithPrefix}`,
+    data: {},
+  }
+  const options = {
+    ...defaultOptions,
+    ...fetchOptions,
+  }
+  return new Promise((resolve, reject) => {
+    const xhr = options.xhr
+    xhr.open(options.method, options.url)
+    for (const key in options.headers)
+      xhr.setRequestHeader(key, options.headers[key])
+
+    xhr.withCredentials = true
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200)
+          resolve({ id: xhr.response })
+        else
+          reject(xhr)
+      }
+    }
+    xhr.upload.onprogress = options.onprogress
+    xhr.send(options.data)
+  })
+}
+
+export const ssePost = (
+  url: string,
+  fetchOptions: any,
+  {
+    onData,
+    onCompleted,
+    onThought,
+    onFile,
+    onMessageEnd,
+    onMessageReplace,
+    onWorkflowStarted,
+    onWorkflowFinished,
+    onNodeStarted,
+    onNodeFinished,
+    onError,
+  }: IOtherOptions,
+) => {
+  const options = Object.assign({}, baseOptions, {
+    method: 'POST',
+  }, fetchOptions)
+
+  const urlPrefix = API_PREFIX
+  const urlWithPrefix = `${BASE_URL}${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
+
+  const { body } = options
+  if (body)
+    options.body = JSON.stringify(body)
+
+  globalThis.fetch(urlWithPrefix, options)
+    .then((res: any) => {
+      if (!/^(2|3)\d{2}$/.test(res.status)) {
+        // eslint-disable-next-line no-new
+        new Promise(() => {
+          res.json().then((data: any) => {
+            console.error({ type: 'error', message: data.message || 'Server Error' })
+          })
+        })
+        onError?.('Server Error')
+        return
+      }
+      return handleStream(res, (str: string, isFirstMessage: boolean, moreInfo: IOnDataMoreInfo) => {
+        if (moreInfo.errorMessage) {
+          console.error({ type: 'error', message: moreInfo.errorMessage })
+          return
+        }
+        onData?.(str, isFirstMessage, moreInfo)
+      }, () => {
+        onCompleted?.()
+      }, onThought, onMessageEnd, onMessageReplace, onFile, onWorkflowStarted, onWorkflowFinished, onNodeStarted, onNodeFinished)
+    }).catch((e) => {
+    console.error({ type: 'error', message: e })
+    onError?.(e)
+  })
 }
 
 export const request = (url: string, options = {}, otherOptions?: IOtherOptions) => {
