@@ -1,6 +1,6 @@
 import type { AnnotationReply, MessageEnd, MessageReplace, ThoughtItem } from './types/type'
 import type { VisionFile } from './types/app'
-import { API_PREFIX, BASE_URL, API_KEY } from './index'
+import { API_PREFIX } from './index'
 
 const TIME_OUT = 100000
 
@@ -17,7 +17,6 @@ const baseOptions = {
   credentials: 'include', // always send cookies、HTTP Basic authentication.
   headers: new Headers({
     'Content-Type': ContentType.json,
-    'Authorization': `Bearer ${API_KEY}`
   }),
   redirect: 'follow',
 }
@@ -253,7 +252,7 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
 
   const urlPrefix = API_PREFIX
 
-  let urlWithPrefix = `${BASE_URL}${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
+  let urlWithPrefix = `${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
 
   const { method, params, body } = options
   // handle query
@@ -331,7 +330,7 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
 
 export const upload = (fetchOptions: any): Promise<any> => {
   const urlPrefix = API_PREFIX
-  const urlWithPrefix = `${BASE_URL}${urlPrefix}/file-upload`
+  const urlWithPrefix = `${urlPrefix}/file-upload`
   const defaultOptions = {
     method: 'POST',
     url: `${urlWithPrefix}`,
@@ -383,7 +382,7 @@ export const ssePost = (
   }, fetchOptions)
 
   const urlPrefix = API_PREFIX
-  const urlWithPrefix = `${BASE_URL}${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
+  const urlWithPrefix = `${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
 
   const { body } = options
   if (body)
