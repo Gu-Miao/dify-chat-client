@@ -59,8 +59,6 @@ export class ChatClient {
     }, { onData, onCompleted, onThought, onFile, onError, getAbortController, onMessageEnd, onMessageReplace, onNodeStarted, onWorkflowStarted, onWorkflowFinished, onNodeFinished })
   }
 
-
-
   // 获取会话列表
   fetchConversations = async () => {
     return get(this.baseURL + '/conversations', {
