@@ -1,6 +1,5 @@
-import type { AnnotationReply, MessageEnd, MessageReplace, ThoughtItem } from './types/type'
-import type { VisionFile } from './types/app'
-import { API_PREFIX } from './index'
+import type {AnnotationReply, MessageEnd, MessageReplace, ThoughtItem} from './types/type'
+import type {VisionFile} from './types/app'
 
 const TIME_OUT = 100000
 
@@ -151,8 +150,7 @@ const handleStream = (
   onNodeStarted?: IOnNodeStarted,
   onNodeFinished?: IOnNodeFinished,
 ) => {
-  if (!response.ok)
-    throw new Error('Network response was not ok')
+  if (!response.ok) throw new Error('Network response was not ok')
 
   const reader = response.body?.getReader()
   const decoder = new TextDecoder('utf-8')
@@ -166,15 +164,15 @@ const handleStream = (
         onCompleted && onCompleted()
         return
       }
-      buffer += decoder.decode(result.value, { stream: true })
+      buffer += decoder.decode(result.value, {stream: true})
       const lines = buffer.split('\n')
       try {
-        lines.forEach((message) => {
-          if (message.startsWith('data: ')) { // check if it starts with data:
+        lines.forEach(message => {
+          if (message.startsWith('data: ')) {
+            // check if it starts with data:
             try {
-              bufferObj = JSON.parse(message.substring(6)) as Record<string, any>// remove data: and parse as json
-            }
-            catch (e) {
+              bufferObj = JSON.parse(message.substring(6)) as Record<string, any> // remove data: and parse as json
+            } catch (e) {
               // mute handle message cut off
               onData('', isFirstMessage, {
                 conversationId: bufferObj?.conversation_id,
@@ -201,36 +199,27 @@ const handleStream = (
                 messageId: bufferObj.id,
               })
               isFirstMessage = false
-            }
-            else if (bufferObj.event === 'agent_thought') {
+            } else if (bufferObj.event === 'agent_thought') {
               onThought?.(bufferObj as ThoughtItem)
-            }
-            else if (bufferObj.event === 'message_file') {
+            } else if (bufferObj.event === 'message_file') {
               onFile?.(bufferObj as VisionFile)
-            }
-            else if (bufferObj.event === 'message_end') {
+            } else if (bufferObj.event === 'message_end') {
               onMessageEnd?.(bufferObj as MessageEnd)
-            }
-            else if (bufferObj.event === 'message_replace') {
+            } else if (bufferObj.event === 'message_replace') {
               onMessageReplace?.(bufferObj as MessageReplace)
-            }
-            else if (bufferObj.event === 'workflow_started') {
+            } else if (bufferObj.event === 'workflow_started') {
               onWorkflowStarted?.(bufferObj as WorkflowStartedResponse)
-            }
-            else if (bufferObj.event === 'workflow_finished') {
+            } else if (bufferObj.event === 'workflow_finished') {
               onWorkflowFinished?.(bufferObj as WorkflowFinishedResponse)
-            }
-            else if (bufferObj.event === 'node_started') {
+            } else if (bufferObj.event === 'node_started') {
               onNodeStarted?.(bufferObj as NodeStartedResponse)
-            }
-            else if (bufferObj.event === 'node_finished') {
+            } else if (bufferObj.event === 'node_finished') {
               onNodeFinished?.(bufferObj as NodeFinishedResponse)
             }
           }
         })
         buffer = lines[lines.length - 1]
-      }
-      catch (e) {
+      } catch (e) {
         onData('', false, {
           conversationId: undefined,
           messageId: '',
@@ -240,38 +229,31 @@ const handleStream = (
         onCompleted?.(true)
         return
       }
-      if (!hasError)
-        read()
+      if (!hasError) read()
     })
   }
   read()
 }
 
-const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: IOtherOptions) => {
+const baseFetch = (url: string, fetchOptions: any, {needAllResponseContent}: IOtherOptions) => {
   const options = Object.assign({}, baseOptions, fetchOptions)
 
-  const urlPrefix = API_PREFIX
+  let urlWithPrefix = url
 
-  let urlWithPrefix = `${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
-
-  const { method, params, body } = options
+  const {method, params, body} = options
   // handle query
   if (method === 'GET' && params) {
     const paramsArray: string[] = []
     Object.keys(params).forEach(key =>
       paramsArray.push(`${key}=${encodeURIComponent(params[key])}`),
     )
-    if (urlWithPrefix.search(/\?/) === -1)
-      urlWithPrefix += `?${paramsArray.join('&')}`
-
-    else
-      urlWithPrefix += `&${paramsArray.join('&')}`
+    if (urlWithPrefix.search(/\?/) === -1) urlWithPrefix += `?${paramsArray.join('&')}`
+    else urlWithPrefix += `&${paramsArray.join('&')}`
 
     delete options.params
   }
 
-  if (body)
-    options.body = JSON.stringify(body)
+  if (body) options.body = JSON.stringify(body)
 
   // Handle timeout
   return Promise.race([
@@ -281,7 +263,8 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
       }, TIME_OUT)
     }),
     new Promise((resolve, reject) => {
-      globalThis.fetch(urlWithPrefix, options)
+      globalThis
+        .fetch(urlWithPrefix, options)
         .then((res: any) => {
           const resClone = res.clone()
           // Error handler
@@ -290,20 +273,19 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
               const bodyJson = res.json()
               switch (res.status) {
                 case 401: {
-                  console.error({ type: 'error', message: 'Invalid token' })
+                  console.error({type: 'error', message: 'Invalid token'})
                   return
                 }
                 default:
                   // eslint-disable-next-line no-new
                   new Promise(() => {
                     bodyJson.then((data: any) => {
-                      console.error({ type: 'error', message: data.message })
+                      console.error({type: 'error', message: data.message})
                     })
                   })
               }
-            }
-            catch (e) {
-              console.error({ type: 'error', message: `${e}` })
+            } catch (e) {
+              console.error({type: 'error', message: `${e}`})
             }
 
             return Promise.reject(resClone)
@@ -311,17 +293,18 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
 
           // handle delete api. Delete api not return content.
           if (res.status === 204) {
-            resolve({ result: 'success' })
+            resolve({result: 'success'})
             return
           }
 
           // return data
-          const data = options.headers.get('Content-type') === ContentType.download ? res.blob() : res.json()
+          const data =
+            options.headers.get('Content-type') === ContentType.download ? res.blob() : res.json()
 
           resolve(needAllResponseContent ? resClone : data)
         })
-        .catch((err) => {
-          console.error({ type: 'error', message: err })
+        .catch(err => {
+          console.error({type: 'error', message: err})
           reject(err)
         })
     }),
@@ -329,8 +312,7 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
 }
 
 export const upload = (fetchOptions: any): Promise<any> => {
-  const urlPrefix = API_PREFIX
-  const urlWithPrefix = `${urlPrefix}/file-upload`
+  const urlWithPrefix = `/file-upload`
   const defaultOptions = {
     method: 'POST',
     url: `${urlWithPrefix}`,
@@ -343,16 +325,13 @@ export const upload = (fetchOptions: any): Promise<any> => {
   return new Promise((resolve, reject) => {
     const xhr = options.xhr
     xhr.open(options.method, options.url)
-    for (const key in options.headers)
-      xhr.setRequestHeader(key, options.headers[key])
+    for (const key in options.headers) xhr.setRequestHeader(key, options.headers[key])
 
     xhr.withCredentials = true
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
-        if (xhr.status === 200)
-          resolve({ id: xhr.response })
-        else
-          reject(xhr)
+        if (xhr.status === 200) resolve({id: xhr.response})
+        else reject(xhr)
       }
     }
     xhr.upload.onprogress = options.onprogress
@@ -377,42 +356,57 @@ export const ssePost = (
     onError,
   }: IOtherOptions,
 ) => {
-  const options = Object.assign({}, baseOptions, {
-    method: 'POST',
-  }, fetchOptions)
+  const options = Object.assign(
+    {},
+    baseOptions,
+    {
+      method: 'POST',
+    },
+    fetchOptions,
+  )
 
-  const urlPrefix = API_PREFIX
-  const urlWithPrefix = `${urlPrefix}${url.startsWith('/') ? url : `/${url}`}`
+  const {body} = options
+  if (body) options.body = JSON.stringify(body)
 
-  const { body } = options
-  if (body)
-    options.body = JSON.stringify(body)
-
-  globalThis.fetch(urlWithPrefix, options)
+  globalThis
+    .fetch(url, options)
     .then((res: any) => {
       if (!/^(2|3)\d{2}$/.test(res.status)) {
         // eslint-disable-next-line no-new
         new Promise(() => {
           res.json().then((data: any) => {
-            console.error({ type: 'error', message: data.message || 'Server Error' })
+            console.error({type: 'error', message: data.message || 'Server Error'})
           })
         })
         onError?.('Server Error')
         return
       }
-      return handleStream(res, (str: string, isFirstMessage: boolean, moreInfo: IOnDataMoreInfo) => {
-        if (moreInfo.errorMessage) {
-          console.error({ type: 'error', message: moreInfo.errorMessage })
-          return
-        }
-        onData?.(str, isFirstMessage, moreInfo)
-      }, () => {
-        onCompleted?.()
-      }, onThought, onMessageEnd, onMessageReplace, onFile, onWorkflowStarted, onWorkflowFinished, onNodeStarted, onNodeFinished)
-    }).catch((e) => {
-    console.error({ type: 'error', message: e })
-    onError?.(e)
-  })
+      return handleStream(
+        res,
+        (str: string, isFirstMessage: boolean, moreInfo: IOnDataMoreInfo) => {
+          if (moreInfo.errorMessage) {
+            console.error({type: 'error', message: moreInfo.errorMessage})
+            return
+          }
+          onData?.(str, isFirstMessage, moreInfo)
+        },
+        () => {
+          onCompleted?.()
+        },
+        onThought,
+        onMessageEnd,
+        onMessageReplace,
+        onFile,
+        onWorkflowStarted,
+        onWorkflowFinished,
+        onNodeStarted,
+        onNodeFinished,
+      )
+    })
+    .catch(e => {
+      console.error({type: 'error', message: e})
+      onError?.(e)
+    })
 }
 
 export const request = (url: string, options = {}, otherOptions?: IOtherOptions) => {
@@ -420,17 +414,17 @@ export const request = (url: string, options = {}, otherOptions?: IOtherOptions)
 }
 
 export const get = (url: string, options = {}, otherOptions?: IOtherOptions) => {
-  return request(url, Object.assign({}, options, { method: 'GET' }), otherOptions)
+  return request(url, Object.assign({}, options, {method: 'GET'}), otherOptions)
 }
 
 export const post = (url: string, options = {}, otherOptions?: IOtherOptions) => {
-  return request(url, Object.assign({}, options, { method: 'POST' }), otherOptions)
+  return request(url, Object.assign({}, options, {method: 'POST'}), otherOptions)
 }
 
 export const put = (url: string, options = {}, otherOptions?: IOtherOptions) => {
-  return request(url, Object.assign({}, options, { method: 'PUT' }), otherOptions)
+  return request(url, Object.assign({}, options, {method: 'PUT'}), otherOptions)
 }
 
 export const del = (url: string, options = {}, otherOptions?: IOtherOptions) => {
-  return request(url, Object.assign({}, options, { method: 'DELETE' }), otherOptions)
+  return request(url, Object.assign({}, options, {method: 'DELETE'}), otherOptions)
 }
