@@ -1,6 +1,6 @@
 {
   "name": "dify-chat-client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.13.0",
   "description": "A simple browser end API client for dify AI chat",
   "main": "dist/index.js",
@@ -10,7 +10,6 @@
   ],
   "scripts": {
     "build": "rollup -c && tsc --emitDeclarationOnly",
-    "publish": "npm publish --access=public",
     "prepack": "npm run build"
   },
   "repository": {
