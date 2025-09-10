@@ -1,11 +1,13 @@
-# dify-chat
+# dify-chat-client
+
+forked from [Adangs/dify-chat](https://github.com/Adangs/dify-chat)
 
 ```shell
-yarn add dify-chat -D
+yarn add dify-chat-client -D
 ```
 
 ```js
-import { ChatClient } from 'dify-chat'
+import { ChatClient } from 'dify-chat-client'
 
 const client = new ChatClient({
   baseURL: '/dify/v1',
@@ -48,7 +50,7 @@ client.sendChatMessage({
 
 ### API
 ```js
-import { ChatClient } from 'dify-chat'
+import { ChatClient } from 'dify-chat-client'
 
 const client = new ChatClient({
   baseURL: '/dify/v1',
