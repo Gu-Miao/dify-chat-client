@@ -1,6 +1,5 @@
 import type { IOnCompleted, IOnData, IOnFile, IOnMessageEnd, IOnMessageReplace, IOnNodeFinished, IOnNodeStarted, IOnThought, IOnWorkflowFinished, IOnWorkflowStarted, IOnError } from './base'
 import { get, post, ssePost } from './base'
-export const API_PREFIX: string = ''
 
 export interface ClientOptions {
   apiKey?: string | undefined;
